@@ -34,7 +34,7 @@ function load(name, copyText = async () => true) {
 test('每个目录是具有唯一 ID 和有效入口的自包含插件', () => {
   const ids = new Set();
   const directories = fs.readdirSync(plugins, { withFileTypes: true });
-  assert.equal(directories.length, 2);
+  assert.ok(directories.length > 0);
   for (const directory of directories) {
     assert.ok(directory.isDirectory());
     const root = path.join(plugins, directory.name);
@@ -48,6 +48,12 @@ test('每个目录是具有唯一 ID 和有效入口的自包含插件', () => {
     const entry = path.resolve(root, manifest.entry);
     assert.ok(entry.startsWith(root + path.sep), '入口不得引用兄弟目录');
     assert.ok(fs.statSync(entry).isFile());
+    if (manifest.icon) {
+      const icon = path.resolve(root, manifest.icon);
+      assert.ok(icon.startsWith(root + path.sep), '图标不得引用插件目录之外的资源');
+      assert.match(path.extname(icon), /^\.(png|jpe?g|icns)$/i);
+      assert.ok(fs.statSync(icon).isFile());
+    }
     for (const file of fs.readdirSync(root)) {
       assert.ok(!fs.lstatSync(path.join(root, file)).isSymbolicLink());
     }

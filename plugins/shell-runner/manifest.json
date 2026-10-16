@@ -1,0 +1,22 @@
+{
+  "id": "com.padding.leap.shell-runner",
+  "name": "Shell 执行器",
+  "version": "1.0.0",
+  "minimumHostVersion": "1.2.0",
+  "runtime": "javascript",
+  "entry": "main.js",
+  "icon": "icon.png",
+  "commands": [
+    {
+      "id": "shell.run",
+      "title": "Shell 执行器",
+      "mode": "interactive",
+      "presentation": "list",
+      "input": {
+        "enabled": true,
+        "placeholder": "输入 Shell 脚本，按 Enter 后台执行…"
+      },
+      "keywords": ["shell", "脚本", "终端", "zsh"]
+    }
+  ]
+}
