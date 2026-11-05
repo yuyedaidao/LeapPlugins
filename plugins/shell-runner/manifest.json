@@ -2,7 +2,7 @@
   "id": "com.padding.leap.shell-runner",
   "name": "Shell 执行器",
   "version": "1.0.0",
-  "minimumHostVersion": "1.2.0",
+  "minimumHostVersion": "0.0.2",
   "runtime": "javascript",
   "entry": "main.js",
   "icon": "icon.png",

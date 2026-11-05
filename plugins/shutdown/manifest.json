@@ -1,0 +1,22 @@
+{
+  "id": "com.padding.leap.shutdown",
+  "name": "关机",
+  "version": "1.0.0",
+  "minimumHostVersion": "0.0.2",
+  "runtime": "javascript",
+  "entry": "main.js",
+  "icon": "icon.png",
+  "commands": [
+    {
+      "id": "shutdown.run",
+      "title": "关机",
+      "mode": "interactive",
+      "presentation": "list",
+      "input": {
+        "enabled": true,
+        "placeholder": "输入分钟或小时，如 30、30分钟、1.5h；留空立即关机"
+      },
+      "keywords": ["关机", "定时关机", "shutdown", "power off"]
+    }
+  ]
+}

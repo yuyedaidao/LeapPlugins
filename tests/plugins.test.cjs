@@ -8,7 +8,7 @@ const plugins = path.resolve(__dirname, '../plugins');
 
 test('每个目录是具有唯一 ID 和有效入口的自包含插件', () => {
   const ids = new Set();
-  const directories = fs.readdirSync(plugins, { withFileTypes: true });
+  const directories = fs.readdirSync(plugins, { withFileTypes: true }).filter(entry => !entry.name.startsWith('.'));
   assert.ok(directories.length > 0);
   for (const directory of directories) {
     assert.ok(directory.isDirectory());
@@ -18,7 +18,7 @@ test('每个目录是具有唯一 ID 和有效入口的自包含插件', () => {
     assert.ok(!ids.has(manifest.id), '插件 ID 不得重复');
     ids.add(manifest.id);
     assert.equal(manifest.runtime, 'javascript');
-    assert.equal(manifest.minimumHostVersion, '1.2.0');
+    assert.equal(manifest.minimumHostVersion, '0.0.2');
     assert.ok(manifest.commands.length > 0);
     const entry = path.resolve(root, manifest.entry);
     assert.ok(entry.startsWith(root + path.sep), '入口不得引用兄弟目录');

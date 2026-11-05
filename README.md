@@ -7,14 +7,17 @@ Leap 插件仓库。每个插件目录可独立下载和安装，无需获取整
 | 插件 | 功能 | 安装目录链接 |
 | --- | --- | --- |
 | [Shell 执行器](plugins/shell-runner/README.md) | 输入 Shell 脚本，按 Enter 后台执行并收起 Leap | [复制此链接到 Leap](https://github.com/yuyedaidao/LeapPlugins/tree/main/plugins/shell-runner) |
+| [关机](plugins/shutdown/README.md) | 立即关机或按分钟/小时定时关机，可取消定时 | [复制此链接到 Leap](https://github.com/yuyedaidao/LeapPlugins/tree/main/plugins/shutdown) |
 
 ## 安装
 
-需要包含“从远程地址安装”功能的 Leap 构建；当前插件的最低宿主版本为 1.2.0。
+需要包含“从远程地址安装”功能的 Leap 构建；当前插件的最低宿主版本为 0.0.2，与 `Leap/Project.swift` 里的 `CFBundleShortVersionString` 一致。
 
 1. 打开 Leap 设置的插件页，选择“安装插件 → 从远程地址安装”。
 2. 粘贴上表中具体插件的目录链接。
 3. 下载并检查来源、版本及命令，确认后安装。
+
+清单里的 `minimumHostVersion` 是**三段数字**（如 `0.0.2`），且不得高于本机 Leap 版本；宿主用当前 App 的 `CFBundleShortVersionString` 与之做数字比较，高于本机时会直接拒绝安装并提示「插件要求的 Leap 版本无效或高于当前版本」。遇到这个提示只有两条路：升级 Leap，或使用清单里不带该字段（或写得更低）的插件版本。字段可省略，省略即不校验版本。
 
 Leap 只下载目标插件目录内的文件，并固定同一次提交，避免混合不同版本。仓库首页不能直接作为插件地址。也可手动下载单个插件目录，通过“从本地目录安装”选择该目录。
 
@@ -31,11 +34,22 @@ plugins/
     README.md
     leap.d.ts
     jsconfig.json
+  shutdown/
+    （同上）
 ```
 
 每个插件拥有独立的 ID 和版本，入口、资源及自带依赖都放在自己的目录中。不要引用兄弟插件目录，不使用符号链接、子模块或 Git LFS。Leap 提供运行时与全局 `leap`，安装时不执行 npm、pip 或安装脚本。
 
-插件具有本机脚本权限。Shell 执行器会以当前用户权限后台执行输入的脚本，请确认信任来源后再安装运行。这里分发的插件按自定义插件安装，不具有随 Leap 内置插件的信任身份。
+插件具有本机脚本权限。Shell 执行器会以当前用户权限后台执行输入的脚本，请确认信任来源后再安装运行。关机插件会真的关掉这台 Mac：首次使用需允许 Leap 控制 System Events，到点前请保存工作。这里分发的插件按自定义插件安装，不具有随 Leap 内置插件的信任身份。
+
+## 权限与日志
+
+| 插件 | 需要的系统授权 | 日志目录 |
+| --- | --- | --- |
+| Shell 执行器 | 无；以当前用户权限执行 | `~/Library/Logs/Leap/shell-runner/` |
+| 关机 | 自动化：允许 Leap 控制「系统事件」（**必需**，否则关机不会执行；首次安排或关机时弹窗，可在“系统设置 → 隐私与安全性 → 自动化”修改）。系统通知只用于确认安排与取消，未授权不影响关机本身 | `~/Library/Logs/Leap/shutdown/` |
+
+插件数据写在 `~/Library/Application Support/Leap/PluginData/<插件 ID>/`，由插件自己管理权限；日志目录为 `0700`、日志文件为 `0600`，不自动清理。
 
 ## 验证
 
