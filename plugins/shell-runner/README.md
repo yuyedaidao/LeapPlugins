@@ -44,6 +44,8 @@ https://github.com/yuyedaidao/LeapPlugins/tree/main/plugins/shell-runner
 
 ## 图标生成记录
 
-`icon.png` 使用内置 imagegen 生成，提示词如下：
+`icon.png` 使用内置 imagegen 生成。1.0.1 在初版基础上移除了右下角的播放三角形，并将 `>` 和 `_` 作为一组移到终端内容区中央。
+
+初版提示词如下：
 
 > Use case: logo-brand. Asset type: square macOS Leap launcher plugin icon, final project asset. Create one polished icon for a Shell script runner. Full square charcoal/navy background extending to the canvas edges, no outside margin or mockup. A bold stylized dark terminal window with a slightly lighter top bar, large luminous mint-green terminal prompt '>_' as the main symbol, and one small simple mint forward execution arrow integrated into the lower-right area. Flat geometric shapes with restrained subtle depth, crisp high contrast, thick strokes and generous spacing, centered composition. It must remain instantly legible at 24 and 32 pixels. No words, letters, labels, slogans, watermark, multiple variations, or extra decorations. Deliver a single square PNG icon.
