@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>JSON 格式化</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    font: 13px -apple-system, system-ui, "Helvetica Neue", sans-serif;
+    --border: color-mix(in srgb, currentColor 14%, transparent);
+    --muted: color-mix(in srgb, currentColor 55%, transparent);
+    --field: color-mix(in srgb, currentColor 5%, transparent);
+    --danger: #d7392e;
+  }
+  body { margin: 0; display: flex; flex-direction: column; height: 100vh; box-sizing: border-box; }
+  textarea {
+    flex: 1; min-height: 0; margin: 12px 12px 0; padding: 10px 12px;
+    border: 1px solid var(--border); border-radius: 10px; background: var(--field);
+    color: inherit; font: 12.5px/1.55 ui-monospace, SFMono-Regular, Menlo, monospace;
+    resize: none; outline: none; tab-size: 2; white-space: pre; overflow: auto;
+  }
+  textarea:focus { border-color: color-mix(in srgb, currentColor 30%, transparent); }
+  footer { display: flex; align-items: center; gap: 8px; padding: 10px 12px 12px; }
+  #status { flex: 1; min-width: 0; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #status.error { color: var(--danger); }
+  button {
+    font: inherit; padding: 5px 12px; border-radius: 7px; cursor: default;
+    border: 1px solid var(--border); background: var(--field); color: inherit;
+  }
+  button:hover:not(:disabled) { background: color-mix(in srgb, currentColor 10%, transparent); }
+  button:disabled { opacity: .45; }
+  button.primary { background: color-mix(in srgb, currentColor 12%, transparent); font-weight: 500; }
+</style>
+</head>
+<body>
+<textarea id="editor" spellcheck="false" autofocus placeholder="粘贴 JSON，自动缩进对齐"></textarea>
+<footer>
+  <span id="status" role="status" aria-live="polite"></span>
+  <button id="format" title="重新格式化当前内容">格式化</button>
+  <button id="minify" title="压缩成一行">压缩</button>
+  <button id="copy" class="primary" title="复制到剪贴板">复制</button>
+</footer>
+<script src="format.js"></script>
+<script>
+'use strict';
+const { format, minify, parseError } = window.JSONFormat;
+const editor = document.querySelector('#editor');
+const statusLine = document.querySelector('#status');
+const copyButton = document.querySelector('#copy');
+
+function setStatus(text, isError = false) {
+  statusLine.textContent = text;
+  statusLine.classList.toggle('error', isError);
+}
+
+function currentText() {
+  return editor.value;
+}
+
+function parsed(text) {
+  try {
+    JSON.parse(text);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function syncControls() {
+  copyButton.disabled = !parsed(currentText());
+}
+
+/** 就地替换内容；已是目标形态时不改动，避免打断光标。 */
+function apply(transform, done) {
+  const text = currentText();
+  if (!text.trim()) {
+    setStatus('粘贴 JSON 后自动格式化');
+    syncControls();
+    return;
+  }
+  try {
+    const output = transform(text);
+    if (output !== text) {
+      const { scrollTop } = editor;
+      editor.value = output;
+      editor.scrollTop = scrollTop;
+      setStatus(done);
+    } else {
+      setStatus('已是该格式');
+    }
+  } catch (error) {
+    // 非法内容不覆盖，保留用户原文。
+    setStatus(parseError(error, text), true);
+  }
+  syncControls();
+}
+
+editor.addEventListener('paste', () => {
+  // 粘贴的默认插入在事件派发后才完成，用任务队列回读新内容。
+  setTimeout(() => apply(format, '已格式化'), 0);
+});
+editor.addEventListener('input', syncControls);
+
+document.querySelector('#format').addEventListener('click', () => apply(format, '已格式化'));
+document.querySelector('#minify').addEventListener('click', () => apply(minify, '已压缩'));
+copyButton.addEventListener('click', async () => {
+  try {
+    await window.leap.copyText(currentText());
+    setStatus('已复制到剪贴板');
+  } catch (error) {
+    setStatus(`复制失败：${error instanceof Error ? error.message : String(error)}`, true);
+  }
+});
+
+/** 进入时若文本框为空，从剪贴板取一段 JSON 自动填入。 */
+async function fillFromClipboard() {
+  if (currentText().trim()) return;
+  let text;
+  try {
+    text = await window.leap.invoke('json-format.run', 'clipboard');
+  } catch {
+    return;
+  }
+  if (!text || !text.trim()) return;
+  if (!parsed(text)) {
+    setStatus('剪贴板中没有可用的 JSON');
+    return;
+  }
+  editor.value = format(text);
+  setStatus('已从剪贴板填入并格式化');
+  syncControls();
+}
+
+window.leap.onEnter(() => {
+  editor.focus();
+  fillFromClipboard();
+});
+syncControls();
+setStatus('粘贴 JSON 后自动格式化');
+</script>
+</body>
+</html>

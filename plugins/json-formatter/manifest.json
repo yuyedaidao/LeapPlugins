@@ -1,0 +1,22 @@
+{
+  "id": "com.padding.leap.json-formatter",
+  "name": "JSON 格式化",
+  "version": "1.0.0",
+  "minimumHostVersion": "0.0.2",
+  "runtime": "javascript",
+  "entry": "main.js",
+  "webEntry": "index.html",
+  "icon": "icon.png",
+  "commands": [
+    {
+      "id": "json-format.run",
+      "title": "JSON 格式化",
+      "mode": "interactive",
+      "presentation": "web",
+      "input": {
+        "enabled": false
+      },
+      "keywords": ["json", "格式化", "format", "美化", "minify"]
+    }
+  ]
+}
