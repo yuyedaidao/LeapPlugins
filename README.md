@@ -12,7 +12,9 @@ Leap 插件仓库。每个插件目录可独立下载和安装，无需获取整
 
 ## 安装
 
-需要包含“从远程地址安装”功能的 Leap 构建；当前插件的最低宿主版本为 0.0.2，与 `Leap/Project.swift` 里的 `CFBundleShortVersionString` 一致。
+Leap 设置的插件页有「插件商店」入口，直接浏览、搜索本仓库的插件并一键安装或更新；商店读取仓库根的 `store.json`。
+
+也可以手动安装：需要包含“从远程地址安装”功能的 Leap 构建；当前插件的最低宿主版本为 0.0.2，与 `Leap/Project.swift` 里的 `CFBundleShortVersionString` 一致。
 
 1. 打开 Leap 设置的插件页，选择“安装插件 → 从远程地址安装”。
 2. 粘贴上表中具体插件的目录链接。
@@ -23,6 +25,19 @@ Leap 插件仓库。每个插件目录可独立下载和安装，无需获取整
 Leap 只下载目标插件目录内的文件，并固定同一次提交，避免混合不同版本。仓库首页不能直接作为插件地址。也可手动下载单个插件目录，通过“从本地目录安装”选择该目录。
 
 远程无登录安装要求仓库为公开状态。仓库保持私有时，首版 Leap 无法访问这些目录。
+
+## 商店索引 store.json
+
+`store.json` 是商店列表的唯一数据源，**由脚本生成，不要手写**：
+
+```sh
+node Scripts/build-index.mjs          # 从 plugins/*/manifest.json 与各插件 README 首段生成
+node Scripts/build-index.mjs --check  # 只校验是否与清单一致，CI 与测试用这个
+```
+
+上架一个插件 = 在 `plugins/` 下建目录写好 `manifest.json`，然后重跑一次生成脚本。`node --test tests/*.test.cjs` 会断言索引与清单一致，忘记重跑时测试失败。
+
+索引条目字段：`id`、`name`、`version`、`path` 来自清单；`summary` 取插件 README 首段的第一句（自动剥掉「最低要求…」这类句子）；`commands` 是命令标题列表。
 
 ## 目录约定
 
