@@ -113,6 +113,18 @@ copyButton.addEventListener('click', async () => {
   }
 });
 
+/** 接收其他插件通过 runPlugin 传来的文本；不合法时也保留原文，不能丢掉调用方的内容。 */
+function fillFromQuery(text) {
+  try {
+    editor.value = format(text);
+    setStatus('已接收传入的文本并格式化');
+  } catch (error) {
+    editor.value = text;
+    setStatus(parseError(error, text), true);
+  }
+  syncControls();
+}
+
 /** 进入时若文本框为空，从剪贴板取一段 JSON 自动填入。 */
 async function fillFromClipboard() {
   if (currentText().trim()) return;
@@ -132,9 +144,11 @@ async function fillFromClipboard() {
   syncControls();
 }
 
-window.leap.onEnter(() => {
+window.leap.onEnter(context => {
   editor.focus();
-  fillFromClipboard();
+  // 有传入参数时以它为唯一来源，剪贴板只用于直接进入插件的情况。
+  if (context && typeof context.query === 'string' && context.query.trim()) fillFromQuery(context.query);
+  else fillFromClipboard();
 });
 syncControls();
 setStatus('粘贴 JSON 后自动格式化');
