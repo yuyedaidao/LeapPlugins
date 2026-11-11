@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "name": "Leap 官方插件",
+  "plugins": [
+    {
+      "id": "com.padding.leap.json-formatter",
+      "name": "JSON 格式化",
+      "version": "1.0.0",
+      "path": "plugins/json-formatter",
+      "commands": [
+        "JSON 格式化"
+      ],
+      "summary": "在 Leap 里粘贴 JSON，自动缩进对齐。",
+      "runtime": "javascript",
+      "minimumHostVersion": "0.0.2"
+    },
+    {
+      "id": "com.padding.leap.shell-runner",
+      "name": "Shell 执行器",
+      "version": "1.0.1",
+      "path": "plugins/shell-runner",
+      "commands": [
+        "Shell 执行器"
+      ],
+      "summary": "搜索「Shell 执行器」、shell、「脚本」或「终端」，按 Enter 进入插件，输入脚本，等待「后台执行 Shell 脚本」条目出现后按 Enter 执…",
+      "runtime": "javascript",
+      "minimumHostVersion": "0.0.2"
+    },
+    {
+      "id": "com.padding.leap.shutdown",
+      "name": "关机",
+      "version": "1.0.0",
+      "path": "plugins/shutdown",
+      "commands": [
+        "关机"
+      ],
+      "summary": "在 Leap 里立即关机或定时关机，并取消定时关机。",
+      "runtime": "javascript",
+      "minimumHostVersion": "0.0.2"
+    }
+  ]
+}
