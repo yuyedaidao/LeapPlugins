@@ -49,6 +49,7 @@ function build() {
     };
     const summary = summaryOf(directory, manifest);
     if (summary) entry.summary = summary;
+    if (manifest.icon) entry.icon = manifest.icon;
     if (manifest.runtime) entry.runtime = manifest.runtime;
     if (manifest.minimumHostVersion) entry.minimumHostVersion = manifest.minimumHostVersion;
     return entry;

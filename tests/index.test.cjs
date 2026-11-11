@@ -32,6 +32,9 @@ test('每条索引都能定位到已发布插件目录与清单', () => {
     // 内置插件 ID 由 Leap 随包提供，商店不得提供同名条目。
     assert.ok(!['com.padding.leap.template-generator', 'com.padding.leap.clipboard'].includes(entry.id));
     if (manifest.minimumHostVersion) assert.equal(entry.minimumHostVersion, manifest.minimumHostVersion);
+    // 图标是清单里的相对路径，App 侧据此拼 raw URL 远程加载。
+    assert.equal(entry.icon, manifest.icon);
+    if (entry.icon) assert.ok(fs.existsSync(path.join(directory, entry.icon)), `图标缺失：${entry.id}`);
   }
 });
 
