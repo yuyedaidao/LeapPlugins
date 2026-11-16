@@ -5,7 +5,11 @@ const { execFile } = require('node:child_process');
 // 网页没有读剪贴板文本的 API，只能由入口用 pbpaste 读回给页面。
 function readClipboard() {
   return new Promise((resolve, reject) => {
-    execFile('/usr/bin/pbpaste', { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 }, (error, stdout) => {
+    // Leap 的插件进程没有 LANG，pbpaste 会退化成 GBK 输出，必须显式指定 UTF-8。
+    execFile('/usr/bin/pbpaste', {
+      encoding: 'utf8', maxBuffer: 64 * 1024 * 1024,
+      env: { LANG: 'en_US.UTF-8', LC_ALL: 'en_US.UTF-8' },
+    }, (error, stdout) => {
       if (error) reject(new Error(`无法读取剪贴板：${error.message}`));
       else resolve(stdout);
     });

@@ -62,6 +62,9 @@ test('入口用 pbpaste 返回剪贴板，其他查询当作待格式化文本',
   const plugin = loadEntry({ clipboard: '{"a":1}' });
   assert.equal(await plugin.invoke('clipboard'), '{"a":1}');
   assert.deepEqual(plugin.calls.execFile.map(([file]) => file), ['/usr/bin/pbpaste']);
+  // 宿主进程没有 locale，必须显式传 UTF-8，否则 pbpaste 会输出 GBK 字节。
+  assert.equal(plugin.calls.execFile[0][1].env.LC_ALL, 'en_US.UTF-8');
+  assert.equal(plugin.calls.execFile[0][1].env.LANG, 'en_US.UTF-8');
   assert.equal(await plugin.invoke('{"a":1,"b":[1,2]}'), '{\n  "a": 1,\n  "b": [\n    1,\n    2\n  ]\n}');
   await assert.rejects(plugin.invoke('{a:1}'), /不是合法的 JSON/);
   await assert.rejects(plugin.raw({ commandID: 'other', query: 'clipboard' }), /未知调用/);

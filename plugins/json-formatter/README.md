@@ -18,7 +18,8 @@
 
 - 内嵌网页（`presentation: "web"`）：Leap 的原生列表只有宿主单行输入，多行文本框只能由网页提供。`input.enabled` 为 `false`，进入后焦点直接在网页里。
 - 格式化在页面内完成（`format.js` 暴露 `window.JSONFormat`），不经过脚本入口，没有每键一次 IPC。
-- 网页没有读剪贴板文本的 API，所以进入时由 `main.js` 的 `leap.onInvoke` 用 `/usr/bin/pbpaste` 读出剪贴板（`query` 为 `clipboard`）；页面确认能解析后才填入。
+- 网页没有读剪贴板文本的 API，所以进入时由 `main.js` 的 `leap.onInvoke` 用 `/usr/bin/pbpaste` 读出剪贴板（`query` 为 `clipboard`）；页面确认能解析后才填入。调用时显式指定 `LANG`/`LC_ALL` 为 UTF-8，因为 Leap 的插件进程没有 locale，`pbpaste` 会退化成 GBK 输出，中文会变成乱码。
+- 页面本身不参与滚动（`html, body` 为 `overflow: hidden`），横向滚动只发生在输入框内，整页不会被左右拖动。
 - 被其他插件用 `runPlugin` 启动时，文本作为查询放进页面上下文的 `query`，`leap.onEnter` 收到后优先于剪贴板处理。
 - 脚本入口同时接受把文本直接作为 `query` 传入调用，返回格式化结果，便于在网页之外复用同一套规则。
 - 修改源目录后需要在 Leap 的插件设置里重新安装，更新受管副本。

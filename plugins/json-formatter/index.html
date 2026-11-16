@@ -13,6 +13,8 @@
     --field: color-mix(in srgb, currentColor 5%, transparent);
     --danger: #d7392e;
   }
+  /* 页面本身不滚动，横向滚动只留给输入框内容，避免整页被左右拖动。 */
+  html, body { overflow: hidden; }
   body { margin: 0; display: flex; flex-direction: column; height: 100vh; box-sizing: border-box; }
   textarea {
     flex: 1; min-height: 0; margin: 12px 12px 0; padding: 10px 12px;
