@@ -32,7 +32,25 @@ interface LeapCopiedFile {
 }
 type LeapImage = string | Uint8Array;
 type LeapPathName = 'home' | 'appData' | 'userData' | 'temp' | 'exe' | 'desktop' | 'documents' | 'downloads' | 'music' | 'pictures' | 'videos' | 'logs';
+interface LeapDbDoc {
+  _id: string;
+  _rev?: string;
+  [key: string]: unknown;
+}
+interface LeapDbResult {
+  id: string;
+  rev?: string;
+  ok: boolean;
+}
+interface LeapDatabase {
+  put(doc: LeapDbDoc): Promise<LeapDbResult>;
+  get(id: string): Promise<LeapDbDoc | null>;
+  remove(id: string, rev: string): Promise<LeapDbResult>;
+  allDocs(): Promise<LeapDbDoc[]>;
+}
 interface LeapCommonSDK {
+  /** 插件私有文档数据库；单文档上限 1MB，更新已有文档必须带 _rev。 */
+  readonly db: LeapDatabase;
   onEnter(callback: (context: LeapContext) => void | Promise<void>): () => void;
   onExit(callback: () => void | Promise<void>): () => void;
   onInputChange(callback: (context: LeapInput) => void | Promise<void>): () => void;

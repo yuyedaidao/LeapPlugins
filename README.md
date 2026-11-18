@@ -74,7 +74,7 @@ plugins/
 | 插件 | 需要的系统授权 | 日志目录 |
 | --- | --- | --- |
 | Shell 执行器 | 无；以当前用户权限执行 | `~/Library/Logs/Leap/shell-runner/` |
-| JSON 格式化 | 无；读取剪贴板文本用 `pbpaste` | 无 |
+| JSON 格式化 | 无；读取剪贴板文本用 `pbpaste`，写插件自己的数据库存上次结果 | 无 |
 | 关机 | 自动化：允许 Leap 控制「系统事件」（**必需**，否则关机不会执行；首次安排或关机时弹窗，可在“系统设置 → 隐私与安全性 → 自动化”修改）。系统通知只用于确认安排与取消，未授权不影响关机本身 | `~/Library/Logs/Leap/shutdown/` |
 
 插件数据写在 `~/Library/Application Support/Leap/PluginData/<插件 ID>/`，由插件自己管理权限；日志目录为 `0700`、日志文件为 `0600`，不自动清理。

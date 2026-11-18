@@ -10,7 +10,7 @@ const sandbox = { window: {} };
 vm.runInNewContext(fs.readFileSync(path.join(root, 'format.js'), 'utf8'), sandbox, {
   filename: path.join(root, 'format.js'), timeout: 1000,
 });
-const { format, minify, parseError } = sandbox.window.JSONFormat;
+const { format, minify, parseError, chooseInitial } = sandbox.window.JSONFormat;
 
 function loadEntry({ clipboard, pbpasteError } = {}) {
   const calls = { execFile: [], logs: [] };
@@ -56,6 +56,27 @@ test('非法 JSON 报出可读错误，有位置信息时带行列', () => {
   assert.equal(parseError(bare, '{\n  a:1}'), "不是合法的 JSON：Expected '}'");
   assert.equal(parseError('boom', ''), '不是合法的 JSON：boom');
   assert.throws(() => minify('{a:1}'), /JSON/);
+});
+
+test('进入时优先用传入参数，其次剪贴板 JSON，最后才是上次保存的结果', () => {
+  // vm 沙箱里的对象原型与主 realm 不同，deepStrictEqual 会过不了，只看字段。
+  const pick = input => {
+    const { source, text } = chooseInitial(input);
+    return { source, text };
+  };
+  assert.deepEqual(pick({ query: '{"a":1}', clipboard: '{"b":2}', saved: '{}' }), {
+    source: 'query',
+    text: '{"a":1}',
+  });
+  assert.deepEqual(pick({ clipboard: '{"b":2}', saved: '{}' }), {
+    source: 'clipboard',
+    text: '{\n  "b": 2\n}',
+  });
+  // 剪贴板为空或不是 JSON 时都不算「有文本内容」，回退到上次结果。
+  assert.deepEqual(pick({ clipboard: '  ', saved: '{"c": 3}' }), { source: 'saved', text: '{"c": 3}' });
+  assert.deepEqual(pick({ clipboard: 'hello', saved: '{"c": 3}' }), { source: 'saved', text: '{"c": 3}' });
+  assert.deepEqual(pick({ clipboard: 'hello' }), { source: 'none', text: '' });
+  assert.deepEqual(pick(), { source: 'none', text: '' });
 });
 
 test('入口用 pbpaste 返回剪贴板，其他查询当作待格式化文本', async () => {

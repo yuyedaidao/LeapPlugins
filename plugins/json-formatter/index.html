@@ -46,10 +46,13 @@
 <script src="format.js"></script>
 <script>
 'use strict';
-const { format, minify, parseError } = window.JSONFormat;
+const { format, minify, parseError, chooseInitial } = window.JSONFormat;
 const editor = document.querySelector('#editor');
 const statusLine = document.querySelector('#status');
 const copyButton = document.querySelector('#copy');
+// 上次保存的结果放在插件自己的数据库里，重装插件也不会丢。
+const SAVED_ID = 'last-output';
+let savedRev;
 
 function setStatus(text, isError = false) {
   statusLine.textContent = text;
@@ -58,6 +61,47 @@ function setStatus(text, isError = false) {
 
 function currentText() {
   return editor.value;
+}
+
+/** 读出上次保存的结果；宿主不支持数据库或读取失败时当作没有。 */
+async function loadLast() {
+  try {
+    const doc = await window.leap.db.get(SAVED_ID);
+    if (!doc || typeof doc.text !== 'string') return null;
+    savedRev = typeof doc._rev === 'string' ? doc._rev : undefined;
+    return doc;
+  } catch (error) {
+    window.leap.log('读取上次内容失败', error);
+    return null;
+  }
+}
+
+/** 保存最后一次成功格式化的结果；失败只记日志，不打扰用户。 */
+async function remember(text) {
+  if (!text.trim()) return;
+  const doc = { _id: SAVED_ID, text, savedAt: Date.now() };
+  if (savedRev) doc._rev = savedRev;
+  try {
+    const result = await window.leap.db.put(doc);
+    savedRev = result && typeof result.rev === 'string' ? result.rev : undefined;
+  } catch (error) {
+    // 跨窗口改写会让 _rev 过期，重读一次版本后重试一次。
+    const stale = error && typeof error.message === 'string' && error.message.includes('版本');
+    if (!stale) return window.leap.log('保存上次内容失败', error);
+    const latest = await loadLast();
+    if (!latest) return;
+    try {
+      const result = await window.leap.db.put({ ...doc, _rev: savedRev });
+      savedRev = result && typeof result.rev === 'string' ? result.rev : undefined;
+    } catch (retryError) {
+      window.leap.log('保存上次内容失败', retryError);
+    }
+  }
+}
+
+function savedAtLabel(savedAt) {
+  const date = new Date(savedAt);
+  return Number.isNaN(date.getTime()) ? '' : `（${date.toLocaleString()}）`;
 }
 
 function parsed(text) {
@@ -91,6 +135,8 @@ function apply(transform, done) {
     } else {
       setStatus('已是该格式');
     }
+    // 「已是该格式」也算一次成功结果，统一按当前内容保存。
+    remember(output);
   } catch (error) {
     // 非法内容不覆盖，保留用户原文。
     setStatus(parseError(error, text), true);
@@ -120,6 +166,7 @@ function fillFromQuery(text) {
   try {
     editor.value = format(text);
     setStatus('已接收传入的文本并格式化');
+    remember(editor.value);
   } catch (error) {
     editor.value = text;
     setStatus(parseError(error, text), true);
@@ -127,30 +174,35 @@ function fillFromQuery(text) {
   syncControls();
 }
 
-/** 进入时若文本框为空，从剪贴板取一段 JSON 自动填入。 */
-async function fillFromClipboard() {
+/** 进入时决定初始内容：传入参数 > 剪贴板里的 JSON > 上次保存的结果。 */
+async function fillInitial(query) {
   if (currentText().trim()) return;
-  let text;
+  const hasQuery = typeof query === 'string' && query.trim();
+  // 有传入参数时以它为唯一来源，不去碰剪贴板和数据库。
+  if (hasQuery) return fillFromQuery(query);
+
+  let clipboard = '';
   try {
-    text = await window.leap.invoke('json-format.run', 'clipboard');
+    clipboard = await window.leap.invoke('json-format.run', 'clipboard');
   } catch {
-    return;
+    // 读不到剪贴板不影响恢复上次内容。
   }
-  if (!text || !text.trim()) return;
-  if (!parsed(text)) {
-    setStatus('剪贴板中没有可用的 JSON');
-    return;
+  const saved = await loadLast();
+  const picked = chooseInitial({ clipboard, saved: saved ? saved.text : null });
+  if (picked.source === 'clipboard') {
+    editor.value = picked.text;
+    setStatus('已从剪贴板填入并格式化');
+    remember(picked.text);
+  } else if (picked.source === 'saved') {
+    editor.value = picked.text;
+    setStatus(`已恢复上次内容${savedAtLabel(saved && saved.savedAt)}`);
   }
-  editor.value = format(text);
-  setStatus('已从剪贴板填入并格式化');
   syncControls();
 }
 
 window.leap.onEnter(context => {
   editor.focus();
-  // 有传入参数时以它为唯一来源，剪贴板只用于直接进入插件的情况。
-  if (context && typeof context.query === 'string' && context.query.trim()) fillFromQuery(context.query);
-  else fillFromClipboard();
+  fillInitial(context && context.query);
 });
 syncControls();
 setStatus('粘贴 JSON 后自动格式化');

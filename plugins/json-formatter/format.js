@@ -33,5 +33,22 @@ root.JSONFormat = {
     const column = Number(matched[1]) - before.lastIndexOf('\n');
     return `不是合法的 JSON（第 ${line} 行第 ${column} 列）：${message}`;
   },
+
+  /**
+   * 决定进入时文本框的初始内容，优先级：传入参数 > 剪贴板里的合法 JSON > 上次保存的结果。
+   * query 原样返回（页面自己格式化并显示错误），其余来源给可直接显示的内容。
+   */
+  chooseInitial({ query, clipboard, saved } = {}) {
+    if (typeof query === 'string' && query.trim()) return { source: 'query', text: query };
+    if (typeof clipboard === 'string' && clipboard.trim()) {
+      try {
+        return { source: 'clipboard', text: root.JSONFormat.format(clipboard) };
+      } catch {
+        // 剪贴板里不是 JSON，不算「有文本内容」，继续看上次保存的结果。
+      }
+    }
+    if (typeof saved === 'string' && saved.trim()) return { source: 'saved', text: saved };
+    return { source: 'none', text: '' };
+  },
 };
 })(typeof window === 'undefined' ? globalThis : window);
