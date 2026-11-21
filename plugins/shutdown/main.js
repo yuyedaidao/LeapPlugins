@@ -131,7 +131,7 @@ async function stop(state) {
   return true;
 }
 
-async function launch(fireAt, token) {
+async function launch(fireAt, token, saveState) {
   const [home, logs] = await Promise.all([leap.getPath('home'), leap.getPath('logs')]);
   const directory = join(logs, 'shutdown');
   await mkdir(directory, { recursive: true, mode: 0o700 });
@@ -140,11 +140,15 @@ async function launch(fireAt, token) {
   try {
     output = await open(logPath, 'wx', 0o600);
     // 按绝对时间等待，系统休眠时不会推迟关机；注释里的 token 供取消时校验进程身份。
+    // saveState 为 true 时省略 state saving preference 参数，macOS 会保存状态、下次开机恢复窗口。
+    const shutdown = saveState
+      ? `exec ${EVENT_SCRIPT('shut down')}`
+      : `/usr/bin/defaults write com.apple.loginwindow TALLogoutSavesState -bool false\nexec ${EVENT_SCRIPT('shut down with state saving preference')}`;
     const script = [
       `# ${token}`,
       `${EVENT_SCRIPT('return name of first process')} >/dev/null 2>&1`,
       `while [ "$(/bin/date +%s)" -lt ${Math.floor(fireAt / 1000)} ]; do /bin/sleep 10; done`,
-      `exec ${EVENT_SCRIPT('shut down')}`,
+      shutdown,
     ].join('\n');
     const child = spawn('/bin/zsh', ['-l', '-c', script], {
       cwd: home,
@@ -183,9 +187,9 @@ async function notify(body) {
   }
 }
 
-async function shutDownNow() {
+async function shutDownNow(saveState) {
   const token = `leap-shutdown-${Date.now()}-${randomUUID()}`;
-  const { logPath } = await launch(Date.now(), token);
+  const { logPath } = await launch(Date.now(), token, saveState);
   await hide();
   return `正在关机。日志：${logPath}`;
 }
@@ -221,6 +225,11 @@ async function cancelSchedule() {
   return message;
 }
 
+const NOW_ITEMS = [
+  { id: 'now', title: '立即关机', description: '不恢复当前打开的应用' },
+  { id: 'save', title: '保存状态关机', description: '下次开机恢复当前打开的应用' },
+];
+
 leap.onInputChange(async ({ text, setList }) => {
   const action = parse(text);
   if (action.kind === 'cancel') {
@@ -228,12 +237,9 @@ leap.onInputChange(async ({ text, setList }) => {
   } else if (action.kind === 'schedule') {
     setList([scheduleItem(action.minutes)]);
   } else if (action.kind === 'now') {
-    setList([{ id: 'now', title: '立即关机', description: '立即执行，没有确认步骤' }]);
+    setList(NOW_ITEMS);
   } else {
-    setList([
-      { id: 'now', title: '立即关机', description: '立即执行，没有确认步骤' },
-      cancelItem(await readState()),
-    ]);
+    setList([...NOW_ITEMS, cancelItem(await readState())]);
   }
 });
 
@@ -244,7 +250,9 @@ leap.onSelect(async ({ text, item }) => {
     const action = parse(text);
     if (action.kind === 'cancel' || (action.kind === 'menu' && item.id === 'cancel')) return await cancelSchedule();
     if (action.kind === 'schedule') return await schedule(action.minutes);
-    if (action.kind === 'now' || (action.kind === 'menu' && item.id === 'now')) return await shutDownNow();
+    if (action.kind === 'now' || (action.kind === 'menu' && (item.id === 'now' || item.id === 'save'))) {
+      return await shutDownNow(item.id === 'save');
+    }
     throw new Error('无效操作。');
   } finally {
     busy = false;

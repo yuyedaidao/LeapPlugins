@@ -31,7 +31,7 @@
     {
       "id": "com.padding.leap.shutdown",
       "name": "关机",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "path": "plugins/shutdown",
       "commands": [
         "关机"

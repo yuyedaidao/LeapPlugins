@@ -8,11 +8,12 @@
 
 | 输入 | 效果 |
 | --- | --- |
-| 留空，选「立即关机」 | 立即关掉这台 Mac |
+| 留空，选「立即关机」 | 立即关机，不恢复打开的应用 |
+| 留空，选「保存状态关机」 | 立即关机，下次开机恢复当前打开的应用 |
 | `30`、`30分钟`、`30m` | 30 分钟后关机 |
 | `2小时`、`2h` | 2 小时后关机 |
 | `1.5h`、`90分钟` | 90 分钟后关机 |
-| `0` | 立即关机 |
+| `0` | 立即关机（不恢复应用） |
 | `取消`、`cancel`、`off` | 取消当前的定时关机 |
 
 取消成功后 Leap 会收起并发一条通知「已取消定时关机（原定 18:30）」；本来就没有定时任务时只提示「当前没有定时关机任务」，不收起窗口。
@@ -23,11 +24,16 @@
 
 ## 关机方式
 
-通过 AppleScript 通知系统关机，等价于菜单栏「关机」：
+通过 AppleScript 通知系统关机，等价于菜单栏「关机」，但会先关掉「重新打开窗口」偏好，下次开机不会自动拉起之前未关闭的 App：
 
 ```text
-osascript -e 'tell application "System Events" to shut down'
+defaults write com.apple.loginwindow TALLogoutSavesState -bool false
+osascript -e 'tell application "System Events" to shut down with state saving preference'
 ```
+
+`shut down` 省略 `state saving preference` 参数时，macOS 总是保存状态、下次开机恢复窗口；加上 `with state saving preference` 后则遵循系统偏好，配合上一行的 `defaults` 把偏好设为「不重新打开」。这个偏好是系统级的，之后从菜单栏手动关机时默认也不会重新打开窗口，如不想要可在关机对话框里重新勾选。
+
+「保存状态关机」则走回原来的 `shut down`（省略参数，始终保存状态），用于需要下次开机恢复当前应用的情况。
 
 不需要管理员密码，但会请求「自动化」权限，允许 Leap 控制 System Events 后才能生效。首次安排时会提前触发一次无害的读取来弹出授权，避免到点才发现没有权限；日志里留有失败原因。
 

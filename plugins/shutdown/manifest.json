@@ -1,7 +1,7 @@
 {
   "id": "com.padding.leap.shutdown",
   "name": "关机",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "minimumHostVersion": "0.0.2",
   "runtime": "javascript",
   "entry": "main.js",
